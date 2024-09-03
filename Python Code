@@ -1,0 +1,64 @@
+import pandas as pd
+
+
+def has_relevant_category(categories, relevant_categories):
+    for category in categories:
+        if category in relevant_categories:
+            return True
+    return False
+
+#Upload file
+def read_and_filter_data(filename, relevant_categories):
+    frame = pd.read_csv('data/' + filename, sep='\t')
+  
+    #Relevant columns
+    columns = ['code', 'lc', 'product_name_en', 'quantity', 'serving_size', 'packaging_tags', 'brands', 'brands_tags', 'categories_tags', 'labels_tags', 'countries', 'countries_tags', 'origins','origins_tags']
+    frame = frame[columns]
+
+    # Split
+    frame['categories_list'] = frame['categories_tags'].str.split(',')
+
+    #Drop rows with null 
+    frame = frame.dropna(subset=['categories_list'])
+
+    
+    frame = frame[frame['categories_list'].apply(has_relevant_category, relevant_categories=relevant_categories)]
+    
+    #UK
+    uk = frame[frame['countries'] == 'United Kingdom']
+
+    #Find top origin country 
+    top_origin = uk['origins_tags'].value_counts().index[0]
+
+    
+    top_origin_country = top_origin.lstrip("en:")
+    top_origin_country = top_origin_country.replace('-', ' ')
+
+    print(f'**{filename[:-4]} origins**','\n', top_origin_country, '\n')
+
+    print ("Top origin country: ", top_origin_country)
+    print ("\n")
+
+    
+    return top_origin_country
+
+# Gather relevant categories data for avocado
+with open("data/relevant_avocado_categories.txt", "r") as file:
+    avocado_categories = file.read().splitlines()
+
+
+top_avocado_origin = read_and_filter_data('avocado.csv', avocado_categories)
+
+# Relevant categories for olive oil
+with open("data/relevant_olive_oil_categories.txt", "r") as file:
+    olive_oil_categories = file.read().splitlines()
+
+
+top_olive_oil_origin = read_and_filter_data('olive_oil.csv', olive_oil_categories)
+
+#Relevant categories sourdough
+with open("data/relevant_sourdough_categories.txt", "r") as file:
+    sourdough_categories = file.read().splitlines()
+
+
+top_sourdough_origin = read_and_filter_data('sourdough.csv', sourdough_categories)
